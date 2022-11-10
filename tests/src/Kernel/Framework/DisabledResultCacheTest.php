@@ -5,6 +5,7 @@ namespace Drupal\Tests\graphql\Kernel\Framework;
 use Drupal\Core\DependencyInjection\ContainerBuilder;
 use Drupal\graphql\GraphQL\Execution\QueryProcessor;
 use Drupal\Tests\graphql\Kernel\GraphQLTestBase;
+use GraphQL\Error\DebugFlag;
 
 /**
  * Test disabled result cache.
@@ -20,7 +21,7 @@ class DisabledResultCacheTest extends GraphQLTestBase {
     parent::register($container);
     // Set the development parameter to TRUE.
     $parameters = $container->getParameter('graphql.config');
-    $parameters['development'] = TRUE;
+    $parameters['development'] = DebugFlag::INCLUDE_DEBUG_MESSAGE;
     $container->setParameter('graphql.config', $parameters);
   }
 
