@@ -24,11 +24,11 @@ use GraphQL\Server\ServerConfig;
 use GraphQL\Utils\AST;
 use GraphQL\Utils\TypeInfo;
 use GraphQL\Utils\Utils;
-use GraphQL\Validator\Rules\AbstractValidationRule;
+use GraphQL\Validator\Rules\ValidationRule;
 use GraphQL\Validator\ValidationContext;
 use GraphQL\Validator\Rules\QueryComplexity;
 use Symfony\Component\HttpFoundation\RequestStack;
-
+use GraphQL\Error\DebugFlag;
 // TODO: Refactor this and clean it up.
 class QueryProcessor {
 
@@ -154,8 +154,8 @@ class QueryProcessor {
         $result->setErrorsHandler($config->getErrorsHandler());
       }
 
-      if ($config->getErrorFormatter() || $config->getDebug()) {
-        $result->setErrorFormatter(FormattedError::prepareFormatter($config->getErrorFormatter(), $config->getDebug()));
+      if ($config->getErrorFormatter() || $config->getDebugFlag() !== DebugFlag::NONE) {
+        $result->setErrorFormatter(FormattedError::prepareFormatter($config->getErrorFormatter(), $config->getDebugFlag()));
       }
 
       return $result;
@@ -230,7 +230,7 @@ class QueryProcessor {
    */
   protected function executeCacheableOperation(PromiseAdapter $adapter, ServerConfig $config, OperationParams $params, DocumentNode $document, $validate = TRUE) {
     $contextCacheId = 'ccid:' . $this->cacheIdentifier($params, $document);
-    if (!$config->getDebug() && $contextCache = $this->cacheBackend->get($contextCacheId)) {
+    if (($config->getDebugFlag() == DebugFlag::NONE) && $contextCache = $this->cacheBackend->get($contextCacheId)) {
       $contexts = $contextCache->data ?: [];
       $cid = 'cid:' . $this->cacheIdentifier($params, $document, $contexts);
       if ($cache = $this->cacheBackend->get($cid)) {
@@ -351,7 +351,7 @@ class QueryProcessor {
     $schema = $config->getSchema();
     $info = new TypeInfo($schema);
     $validation = new ValidationContext($schema, $document, $info);
-    $visitors = array_values(array_map(function (AbstractValidationRule $rule) use ($validation, $params) {
+    $visitors = array_values(array_map(function (ValidationRule $rule) use ($validation, $params) {
       // Set current variable values for QueryComplexity validation rule case
       // @see \GraphQL\GraphQL::promiseToExecute for equivalent
       if ($rule instanceof QueryComplexity && !empty($params->variables)) {
