@@ -25,6 +25,7 @@ use GraphQL\Type\SchemaConfig;
 use GraphQL\Validator\DocumentValidator;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use GraphQL\Error\DebugFlag;
 
 abstract class SchemaPluginBase extends PluginBase implements SchemaPluginInterface, SchemaBuilderInterface, ContainerFactoryPluginInterface, CacheableDependencyInterface {
 
@@ -288,7 +289,7 @@ abstract class SchemaPluginBase extends PluginBase implements SchemaPluginInterf
 
     $config->setPersistentQueryLoader([$this->queryProvider, 'getQuery']);
     $config->setQueryBatching(TRUE);
-    $config->setDebug(!!$this->parameters['development']);
+    $config->setDebugFlag($this->parameters['development'] ?: DebugFlag::NONE);
     $config->setSchema($this->getSchema());
 
     // Always log the errors.
@@ -439,7 +440,15 @@ abstract class SchemaPluginBase extends PluginBase implements SchemaPluginInterf
    * {@inheritdoc}
    */
   public function processFields(array $fields) {
-    return array_map([$this, 'buildField'], $fields);
+    $processFields = array_map([$this, 'buildField'], $fields);
+
+    foreach($processFields as $key => $processField) {
+      if ($processField === false) {
+        unset($processFields[$key]);
+      }
+    }
+
+    return $processFields;
   }
 
   /**
@@ -506,6 +515,10 @@ abstract class SchemaPluginBase extends PluginBase implements SchemaPluginInterf
    *   The field definition.
    */
   protected function buildField($field) {
+    if ($field['definition']['type'][0] === 'layout_section') {
+      return false;
+    }
+
     if (!isset($this->fields[$field['id']])) {
       $creator = [$field['class'], 'createInstance'];
       $this->fields[$field['id']] = $creator($this, $this->fieldManager, $field['definition'], $field['id']);

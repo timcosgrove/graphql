@@ -27,11 +27,7 @@ class QueryRouteEnhancer implements EnhancerInterface {
     $query = $this->extractQuery($request);
     $operations = $helper->parseRequestParams($method, $body, $query);
 
-    // By default we assume a 'single' request. This is going to fail in the
-    // graphql processor due to a missing query string but at least provides
-    // the right format for the client to act upon.
     return $defaults + [
-      '_controller' => $defaults['_graphql']['single'],
       'operations' => $operations,
     ];
   }
@@ -66,7 +62,7 @@ class QueryRouteEnhancer implements EnhancerInterface {
       $values = array_merge($values, JsonHelper::decodeParams($content));
     }
 
-    if (stripos($request->headers->get('content-type'), 'multipart/form-data') !== FALSE) {
+    if (stripos($request->headers->get('content-type') ?: 'empty', 'multipart/form-data') !== FALSE) {
       return $this->extractMultipart($request, $values);
     }
 

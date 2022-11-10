@@ -4,7 +4,7 @@ namespace Drupal\Tests\graphql\Kernel\Framework;
 
 use Drupal\graphql\GraphQL\Buffers\BufferBase;
 use Drupal\Tests\graphql\Kernel\GraphQLTestBase;
-use Zend\Stdlib\ArrayObject;
+use ArrayObject;
 
 /**
  * Test batched field resolving.
@@ -18,7 +18,7 @@ class BufferedFieldTest extends GraphQLTestBase {
    */
   public function testBatchedFields() {
     $buffer = $this->getMockBuilder(BufferBase::class)
-      ->setMethods(['resolveBufferArray'])
+      ->onlyMethods(['resolveBufferArray'])
       ->getMock();
 
     $users = [
